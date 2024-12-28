@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:doctor_app/doctor_details_page.dart';
 import 'package:flutter/material.dart';
 
 class DoctorAppointmentPage extends StatefulWidget {
@@ -19,7 +20,11 @@ class _DoctorAppointmentPageState extends State<DoctorAppointmentPage> {
   Future<void> _fetchDoctors() async {
     final doctorsSnapshot = await _firestore.collection('doctors').get();
     setState(() {
-      doctors = doctorsSnapshot.docs.map((doc) => doc.data()).toList();
+      doctors = doctorsSnapshot.docs.map((doc) {
+        final data = doc.data();
+        data['id'] = doc.id;
+        return data;
+      }).toList();
     });
   }
 
@@ -38,6 +43,14 @@ class _DoctorAppointmentPageState extends State<DoctorAppointmentPage> {
             title: Text(doctor['name']),
             subtitle: Text("Specialization: ${doctor['specialization']}"),
             onTap: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => DoctorDetailsPage(
+                    doctorId: doctor['id'],
+                  ),
+                ),
+              );
               // Navigate to Doctor Details or Booking Page
             },
           );

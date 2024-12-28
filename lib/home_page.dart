@@ -1,11 +1,13 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:doctor_app/ambulance_service_page.dart';
+import 'package:doctor_app/bookings_menu_page.dart';
 import 'package:doctor_app/doctor_appointment_page.dart';
 import 'package:doctor_app/hospital_admission_page.dart';
 import 'package:doctor_app/lab_test_page.dart';
 import 'package:doctor_app/radiology_investigation_page.dart';
 
 import 'package:doctor_app/service_page.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
 class Homepage extends StatefulWidget {
@@ -18,6 +20,7 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
+  int _currentIndex = 0;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   var db = FirebaseFirestore.instance;
 
@@ -177,6 +180,7 @@ class _HomepageState extends State<Homepage> {
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _currentIndex,
         showUnselectedLabels: true,
         items: const [
           BottomNavigationBarItem(
@@ -201,6 +205,26 @@ class _HomepageState extends State<Homepage> {
               backgroundColor: Colors.red),
         ],
         onTap: (index) {
+          setState(() {
+            _currentIndex = index; // Update the current index
+          });
+
+          // Handle navigation based on index
+          if (index == 1) {
+            User? user = FirebaseAuth.instance.currentUser;
+            // if (user != null) {
+            String userId = 'BS4bdOFSVgT049AaqPmTFh660Re2';
+            // user.uid;
+            // Navigate to the Bookings Page
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => DashboardPage(
+                        userId: userId,
+                      )),
+            );
+            // }
+          }
           // Handle navigation
         },
       ),
