@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:doctor_app/service_page.dart';
 import 'package:flutter/material.dart';
 
 class Homepage extends StatefulWidget {
@@ -75,6 +76,7 @@ class _HomepageState extends State<Homepage> {
               // } catch (e) {
               //   print('Error: $e');
               // }
+
               // Navigate to Profile Page
             },
           ),
@@ -130,7 +132,6 @@ class _HomepageState extends State<Homepage> {
                       service['title'],
                       IconData(int.parse(service['icon']),
                           fontFamily: 'MaterialIcons'),
-                      // IconData(0xe4ea, fontFamily: 'MaterialIcons'),
                       Color(int.parse(service['color'])));
                 }).toList(),
                 // [
@@ -205,6 +206,12 @@ class _HomepageState extends State<Homepage> {
     print(IconData(0xe4ea, fontFamily: 'MaterialIcons'));
     return GestureDetector(
       onTap: () {
+        Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) => ServicePage(title: title),
+          ),
+        );
         // Navigate to respective service page
       },
       child: Container(
