@@ -88,16 +88,21 @@ class _LoginPageState extends State<LoginPage> {
       MaterialPageRoute(
           builder: (context) => const Homepage(
                 username: 'Abc',
+                userId: '1',
               )),
     );
   }
 }
 
 class HomePage extends StatelessWidget {
-  @override
   void navigateToLogin(context) {
-    Navigator.push(context,
-        MaterialPageRoute(builder: (context) => Homepage(username: 'Abc')));
+    Navigator.push(
+        context,
+        MaterialPageRoute(
+            builder: (context) => Homepage(
+                  username: 'Abc',
+                  userId: '1',
+                )));
   }
 
   Widget build(BuildContext context) {

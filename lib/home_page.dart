@@ -1,14 +1,60 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class Homepage extends StatelessWidget {
+class Homepage extends StatefulWidget {
   final String username;
-  const Homepage({required this.username});
+  final String userId;
+  const Homepage({required this.username, required this.userId});
+
+  @override
+  State<Homepage> createState() => _HomepageState();
+}
+
+class _HomepageState extends State<Homepage> {
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  var db = FirebaseFirestore.instance;
+
+  String username = "User";
+  List<Map<String, dynamic>> services = [];
+  List<Map<String, dynamic>> popularItems = [];
+
+  @override
+  void initState() {
+    super.initState();
+    _fetchUserDetails();
+    _fetchServices();
+    _fetchPopularItems();
+  }
+
+  Future<void> _fetchUserDetails() async {
+    final userDoc =
+        await _firestore.collection('users').doc(widget.userId).get();
+    if (userDoc.exists) {
+      setState(() {
+        username = userDoc.data()?['name'] ?? "User";
+      });
+    }
+  }
+
+  Future<void> _fetchServices() async {
+    final servicesSnapshot = await _firestore.collection('services').get();
+    setState(() {
+      services = servicesSnapshot.docs.map((doc) => doc.data()).toList();
+    });
+  }
+
+  Future<void> _fetchPopularItems() async {
+    final popularSnapshot = await _firestore.collection('popular_items').get();
+    setState(() {
+      popularItems = popularSnapshot.docs.map((doc) => doc.data()).toList();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text("Hello, $username"),
+        title: Text("Hello, ${widget.username}"),
         actions: [
           IconButton(
             icon: Icon(Icons.notifications),
@@ -18,7 +64,17 @@ class Homepage extends StatelessWidget {
           ),
           IconButton(
             icon: Icon(Icons.account_circle),
-            onPressed: () {
+            onPressed: () async {
+              print(_firestore.collection('users').get());
+              // try {
+              //   final snapshot =
+              //       await FirebaseFirestore.instance.collection('users').get();
+              //   snapshot.docs.forEach((doc) {
+              //     print(doc.data());
+              //   });
+              // } catch (e) {
+              //   print('Error: $e');
+              // }
               // Navigate to Profile Page
             },
           ),
@@ -69,17 +125,25 @@ class Homepage extends StatelessWidget {
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
                 physics: NeverScrollableScrollPhysics(),
-                children: [
-                  _buildServiceTile(
-                      "Doctor Appointment", Icons.local_hospital, Colors.blue),
-                  _buildServiceTile("Hospital Admission",
-                      Icons.medical_services, Colors.green),
-                  _buildServiceTile("Lab Test", Icons.science, Colors.orange),
-                  _buildServiceTile("Radiology Investigation",
-                      Icons.radio_outlined, Colors.purple),
-                  _buildServiceTile("Ambulance Service",
-                      Icons.car_crash_outlined, Colors.red),
-                ],
+                children: services.map((service) {
+                  return _buildServiceTile(
+                      service['title'],
+                      IconData(int.parse(service['icon']),
+                          fontFamily: 'MaterialIcons'),
+                      // IconData(0xe4ea, fontFamily: 'MaterialIcons'),
+                      Color(int.parse(service['color'])));
+                }).toList(),
+                // [
+                //   _buildServiceTile(
+                //       "Doctor Appointment", Icons.local_hospital, Colors.blue),
+                //   _buildServiceTile("Hospital Admission",
+                //       Icons.medical_services, Colors.green),
+                //   _buildServiceTile("Lab Test", Icons.science, Colors.orange),
+                //   _buildServiceTile("Radiology Investigation",
+                //       Icons.radio_outlined, Colors.purple),
+                //   _buildServiceTile("Ambulance Service",
+                //       Icons.car_crash_outlined, Colors.red),
+                // ],
               ),
               SizedBox(height: 20),
 
@@ -90,26 +154,44 @@ class Homepage extends StatelessWidget {
               ListView(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),
-                children: [
-                  _buildPopularItem(
-                      "City Hospital", "5 km away", Icons.local_hospital),
-                  _buildPopularItem(
-                      "LabCare Diagnostics", "3 km away", Icons.science),
-                ],
+                children: popularItems.map((item) {
+                  return _buildPopularItem(
+                      item['name'], item['distance'], Icons.location_city);
+                }).toList(),
+                // [
+                //   _buildPopularItem(
+                //       "City Hospital", "5 km away", Icons.local_hospital),
+                //   _buildPopularItem(
+                //       "LabCare Diagnostics", "3 km away", Icons.science),
+                // ],
               ),
             ],
           ),
         ),
       ),
       bottomNavigationBar: BottomNavigationBar(
-        items: [
-          BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
-          BottomNavigationBarItem(icon: Icon(Icons.book), label: "Bookings"),
+        showUnselectedLabels: true,
+        items: const [
           BottomNavigationBarItem(
-              icon: Icon(Icons.phone), label: "Call to Book"),
+              icon: Icon(Icons.home),
+              label: "Home",
+              backgroundColor: Colors.red),
           BottomNavigationBarItem(
-              icon: Icon(Icons.calendar_today), label: "Your Appointments"),
-          BottomNavigationBarItem(icon: Icon(Icons.info), label: "About"),
+              icon: Icon(Icons.book),
+              label: "Bookings",
+              backgroundColor: Colors.red),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.phone),
+              label: "Call to Book",
+              backgroundColor: Colors.red),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.calendar_today),
+              label: "Your Appointments",
+              backgroundColor: Colors.red),
+          BottomNavigationBarItem(
+              icon: Icon(Icons.info),
+              label: "About",
+              backgroundColor: Colors.red),
         ],
         onTap: (index) {
           // Handle navigation
@@ -119,6 +201,8 @@ class Homepage extends StatelessWidget {
   }
 
   Widget _buildServiceTile(String title, IconData icon, Color color) {
+    print(icon);
+    print(IconData(0xe4ea, fontFamily: 'MaterialIcons'));
     return GestureDetector(
       onTap: () {
         // Navigate to respective service page
