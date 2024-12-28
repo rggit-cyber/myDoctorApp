@@ -1,4 +1,10 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:doctor_app/ambulance_service_page.dart';
+import 'package:doctor_app/doctor_appointment_page.dart';
+import 'package:doctor_app/hospital_admission_page.dart';
+import 'package:doctor_app/lab_test_page.dart';
+import 'package:doctor_app/radiology_investigation_page.dart';
+
 import 'package:doctor_app/service_page.dart';
 import 'package:flutter/material.dart';
 
@@ -206,12 +212,33 @@ class _HomepageState extends State<Homepage> {
     print(IconData(0xe4ea, fontFamily: 'MaterialIcons'));
     return GestureDetector(
       onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => ServicePage(title: title),
-          ),
-        );
+        print(title);
+        if (title == 'Doctor Appointment') {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => DoctorAppointmentPage()));
+        } else if (title == 'Hospital Admission') {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => HospitalAdmissionPage()));
+        } else if (title == 'Lab Test') {
+          Navigator.push(
+              context, MaterialPageRoute(builder: (context) => LabTestPage()));
+        } else if (title == 'Ambulance Service') {
+          Navigator.push(context,
+              MaterialPageRoute(builder: (context) => AmbulanceServicePage()));
+        } else if (title == 'Radiology investigation') {
+          Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => RadiologyInvestigationPage()));
+        } else {
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => ServicePage(title: title),
+            ),
+          );
+        }
+
         // Navigate to respective service page
       },
       child: Container(
