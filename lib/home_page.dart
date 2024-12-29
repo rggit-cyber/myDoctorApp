@@ -213,7 +213,7 @@ class _HomepageState extends State<Homepage> {
           if (index == 1) {
             User? user = FirebaseAuth.instance.currentUser;
             // if (user != null) {
-            String userId = 'BS4bdOFSVgT049AaqPmTFh660Re2';
+            String userId = '1';
             // user.uid;
             // Navigate to the Bookings Page
             Navigator.push(

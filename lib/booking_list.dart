@@ -13,10 +13,16 @@ class BookingList extends StatelessWidget {
     return StreamBuilder<QuerySnapshot>(
       stream: FirebaseFirestore.instance
           .collection('bookings')
-          .where('user_id', isEqualTo: userId)
+          // .where('user_id', isEqualTo: userId)
           .where('status', isEqualTo: status)
           .snapshots(),
       builder: (context, snapshot) {
+        // print(FirebaseFirestore.instance
+        //     .collection('bookings')
+        //     .where('user_id', isEqualTo: userId)
+        //     .where('status', isEqualTo: status)
+        //     .get());
+        print(status);
         if (!snapshot.hasData) {
           return Center(child: CircularProgressIndicator());
         }
