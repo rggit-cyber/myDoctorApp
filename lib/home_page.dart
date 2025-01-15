@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:doctor_app/admin_panel.dart';
 import 'package:doctor_app/ambulance_service_page.dart';
 import 'package:doctor_app/bookings_menu_page.dart';
 import 'package:doctor_app/doctor_appointment_page.dart';
@@ -205,6 +206,7 @@ class _HomepageState extends State<Homepage> {
               backgroundColor: Colors.red),
         ],
         onTap: (index) {
+          print(index);
           setState(() {
             _currentIndex = index; // Update the current index
           });
@@ -224,6 +226,11 @@ class _HomepageState extends State<Homepage> {
                       )),
             );
             // }
+          } else if (index == 4) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(builder: (context) => AdminPanel()),
+            );
           }
           // Handle navigation
         },
@@ -232,8 +239,6 @@ class _HomepageState extends State<Homepage> {
   }
 
   Widget _buildServiceTile(String title, IconData icon, Color color) {
-    print(icon);
-    print(IconData(0xe4ea, fontFamily: 'MaterialIcons'));
     return GestureDetector(
       onTap: () {
         print(title);

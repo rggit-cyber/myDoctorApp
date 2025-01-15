@@ -22,7 +22,6 @@ class BookingList extends StatelessWidget {
         //     .where('user_id', isEqualTo: userId)
         //     .where('status', isEqualTo: status)
         //     .get());
-        print(status);
         if (!snapshot.hasData) {
           return Center(child: CircularProgressIndicator());
         }
