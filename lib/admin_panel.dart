@@ -50,7 +50,7 @@ class _AdminPanelState extends State<AdminPanel>
         children: [
           ManageDoctorsPage(),
           ManageBookingsPage(),
-          // ManageHospitalsPage(),
+          ManageHospitalsPage(),
           // ManageTestsPage(),
           // ManageLabsPage(),
           // ManageAmbulancePage(),
