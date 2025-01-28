@@ -1,3 +1,6 @@
+import 'package:doctor_app/manage_ambulance_page.dart';
+import 'package:doctor_app/manage_lab_tests_page.dart';
+import 'package:doctor_app/manage_labs_page.dart';
 import 'package:flutter/material.dart';
 import 'manage_doctors_page.dart';
 import 'manage_bookings_page.dart';
@@ -51,9 +54,9 @@ class _AdminPanelState extends State<AdminPanel>
           ManageDoctorsPage(),
           ManageBookingsPage(),
           ManageHospitalsPage(),
-          // ManageTestsPage(),
-          // ManageLabsPage(),
-          // ManageAmbulancePage(),
+          ManageLabTestsPage(),
+          ManageLabsPage(),
+          ManageAmbulancePage(),
         ],
       ),
     );
