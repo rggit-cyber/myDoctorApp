@@ -18,7 +18,7 @@ class _DashboardPageState extends State<DashboardPage>
   @override
   void initState() {
     super.initState();
-    _tabController = TabController(length: 2, vsync: this);
+    _tabController = TabController(length: 3, vsync: this);
   }
 
   @override
@@ -35,16 +35,18 @@ class _DashboardPageState extends State<DashboardPage>
         bottom: TabBar(
           controller: _tabController,
           tabs: [
-            Tab(text: "Upcoming"),
-            Tab(text: "Past"),
+            Tab(text: "Pending"),
+            Tab(text: "Confirmed"),
+            Tab(text: "Cancelled"),
           ],
         ),
       ),
       body: TabBarView(
         controller: _tabController,
         children: [
-          BookingList(userId: widget.userId, status: "upcoming"),
-          BookingList(userId: widget.userId, status: "past"),
+          BookingList(userId: widget.userId, status: "pending"),
+          BookingList(userId: widget.userId, status: "confirmed"),
+          BookingList(userId: widget.userId, status: "cancelled"),
         ],
       ),
     );

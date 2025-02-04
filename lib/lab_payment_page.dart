@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-class PaymentPage extends StatelessWidget {
+class LabPaymentPage extends StatelessWidget {
   final String labId;
   final String labName;
   final String testId;
@@ -9,7 +9,7 @@ class PaymentPage extends StatelessWidget {
   final String slot;
   final double price;
 
-  PaymentPage({
+  LabPaymentPage({
     required this.labId,
     required this.labName,
     required this.testId,

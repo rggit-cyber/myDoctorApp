@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:doctor_app/lab_payment_page.dart';
 import 'package:doctor_app/payment_page.dart';
 import 'package:flutter/material.dart';
 
@@ -44,14 +45,14 @@ class SlotSelectionPage extends StatelessWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => PaymentPage(
-                            // labId: labId,
-                            // labName: labName,
-                            // testId: testId,
-                            // testName: testName,
-                            // slot: slot['time'],
-                            // price: price,
-                            ),
+                        builder: (context) => LabPaymentPage(
+                          labId: labId,
+                          labName: labName,
+                          testId: testId,
+                          testName: testName,
+                          slot: slot['time'],
+                          price: price,
+                        ),
                       ),
                     );
                   }
