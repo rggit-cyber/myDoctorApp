@@ -15,7 +15,9 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
       builder: (context) {
         String name = '';
         String address = '';
+        String contact = '';
         List<String> availableTests = [];
+        Map<String, int> testPrices = {};
 
         return AlertDialog(
           title: Text("Add Lab"),
@@ -32,10 +34,31 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
                   onChanged: (value) => address = value,
                 ),
                 TextField(
+                  decoration: InputDecoration(labelText: "Contact"),
+                  onChanged: (value) => contact = value,
+                ),
+                TextField(
                   decoration: InputDecoration(
                       labelText: "Available Tests (comma-separated)"),
-                  onChanged: (value) => availableTests =
-                      value.split(',').map((e) => e.trim()).toList(),
+                  onChanged: (value) {
+                    availableTests =
+                        value.split(',').map((e) => e.trim()).toList();
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(
+                      labelText:
+                          "Test Prices (format: test1:price1, test2:price2)"),
+                  onChanged: (value) {
+                    testPrices = {};
+                    value.split(',').forEach((entry) {
+                      List<String> parts = entry.split(':');
+                      if (parts.length == 2) {
+                        testPrices[parts[0].trim()] =
+                            int.tryParse(parts[1].trim()) ?? 0;
+                      }
+                    });
+                  },
                 ),
               ],
             ),
@@ -51,7 +74,9 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
                   _firestore.collection('labs').add({
                     'name': name,
                     'address': address,
+                    'contact': contact,
                     'available_tests': availableTests,
+                    'test_prices': testPrices,
                   });
                   Navigator.pop(context);
                 }
@@ -71,8 +96,11 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
       builder: (context) {
         String name = currentData['name'] ?? '';
         String address = currentData['address'] ?? '';
+        String contact = currentData['contact'] ?? '';
         List<String> availableTests =
             List<String>.from(currentData['available_tests'] ?? []);
+        Map<String, int> testPrices =
+            Map<String, int>.from(currentData['test_prices'] ?? {});
 
         return AlertDialog(
           title: Text("Edit Lab"),
@@ -91,12 +119,38 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
                   onChanged: (value) => address = value,
                 ),
                 TextField(
+                  decoration: InputDecoration(labelText: "Contact"),
+                  controller: TextEditingController(text: contact),
+                  onChanged: (value) => contact = value,
+                ),
+                TextField(
                   decoration: InputDecoration(
                       labelText: "Available Tests (comma-separated)"),
                   controller:
                       TextEditingController(text: availableTests.join(', ')),
-                  onChanged: (value) => availableTests =
-                      value.split(',').map((e) => e.trim()).toList(),
+                  onChanged: (value) {
+                    availableTests =
+                        value.split(',').map((e) => e.trim()).toList();
+                  },
+                ),
+                TextField(
+                  decoration: InputDecoration(
+                      labelText:
+                          "Test Prices (format: test1:price1, test2:price2)"),
+                  controller: TextEditingController(
+                      text: testPrices.entries
+                          .map((e) => "${e.key}:${e.value}")
+                          .join(', ')),
+                  onChanged: (value) {
+                    testPrices = {};
+                    value.split(',').forEach((entry) {
+                      List<String> parts = entry.split(':');
+                      if (parts.length == 2) {
+                        testPrices[parts[0].trim()] =
+                            int.tryParse(parts[1].trim()) ?? 0;
+                      }
+                    });
+                  },
                 ),
               ],
             ),
@@ -112,7 +166,9 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
                   _firestore.collection('labs').doc(labId).update({
                     'name': name,
                     'address': address,
+                    'contact': contact,
                     'available_tests': availableTests,
+                    'test_prices': testPrices,
                   });
                   Navigator.pop(context);
                 }
@@ -127,6 +183,117 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
 
   void _deleteLab(String labId) {
     _firestore.collection('labs').doc(labId).delete();
+  }
+
+  void _addSlot(BuildContext context, String labId) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        String time = '';
+        bool availability = true;
+
+        return AlertDialog(
+          title: Text("Add Slot"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                decoration: InputDecoration(labelText: "Time (e.g., 10:00 AM)"),
+                onChanged: (value) => time = value,
+              ),
+              SwitchListTile(
+                title: Text("Available"),
+                value: availability,
+                onChanged: (value) => availability = value,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context), child: Text("Cancel")),
+            ElevatedButton(
+              onPressed: () {
+                if (time.isNotEmpty) {
+                  _firestore
+                      .collection('labs')
+                      .doc(labId)
+                      .collection('slots')
+                      .add({
+                    'time': time,
+                    'availability': availability,
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: Text("Add"),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  // Function to Delete Slot
+  void _deleteSlot(String labId, String slotId) {
+    _firestore
+        .collection('labs')
+        .doc(labId)
+        .collection('slots')
+        .doc(slotId)
+        .delete();
+  }
+
+  void _editSlot(BuildContext context, String labId, String slotId,
+      Map<String, dynamic> slotData) {
+    TextEditingController timeController =
+        TextEditingController(text: slotData['time']);
+    bool availability = slotData['availability'];
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Edit Slot"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: timeController,
+                decoration: InputDecoration(labelText: "Time (e.g., 10:00 AM)"),
+              ),
+              SwitchListTile(
+                title: Text("Available"),
+                value: availability,
+                onChanged: (value) {
+                  availability = value;
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+                onPressed: () => Navigator.pop(context), child: Text("Cancel")),
+            ElevatedButton(
+              onPressed: () {
+                if (timeController.text.isNotEmpty) {
+                  _firestore
+                      .collection('labs')
+                      .doc(labId)
+                      .collection('slots')
+                      .doc(slotId)
+                      .update({
+                    'time': timeController.text,
+                    'availability': availability,
+                  });
+                  Navigator.pop(context);
+                }
+              },
+              child: Text("Save"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -155,23 +322,87 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
           return ListView(
             children: snapshot.data!.docs.map((doc) {
               final lab = doc.data() as Map<String, dynamic>;
-              return ListTile(
+              return ExpansionTile(
                 title: Text(lab['name']),
                 subtitle: Text(
-                    "Address: ${lab['address']} | Tests: ${lab['available_tests'].join(', ')}"),
-                trailing: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    IconButton(
-                      icon: Icon(Icons.edit, color: Colors.blue),
-                      onPressed: () => _editLab(context, doc.id, lab),
+                    "Address: ${lab['address']} | Contact: ${lab['contact']}"),
+                children: [
+                  Padding(
+                    padding: EdgeInsets.all(8.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                            "Available Tests: ${lab['available_tests'].join(', ')}"),
+                        Text("Test Prices:"),
+                        ...lab['test_prices']
+                            .entries
+                            .map<Widget>((entry) =>
+                                Text("${entry.key}: ₹${entry.value}"))
+                            .toList(),
+                        SizedBox(height: 10),
+                        StreamBuilder<QuerySnapshot>(
+                          stream: _firestore
+                              .collection('labs')
+                              .doc(doc.id)
+                              .collection('slots')
+                              .snapshots(),
+                          builder: (context, slotSnapshot) {
+                            if (!slotSnapshot.hasData)
+                              return CircularProgressIndicator();
+                            var slots = slotSnapshot.data!.docs;
+                            return Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  ...slots.map((slot) {
+                                    var slotData =
+                                        slot.data() as Map<String, dynamic>;
+                                    bool isAvailable =
+                                        slotData['availability'] ?? false;
+                                    return ListTile(
+                                      title: Text("Slot: ${slotData['time']}"),
+                                      subtitle: Text(isAvailable
+                                          ? 'Available'
+                                          : 'Not Available'),
+                                      trailing: IconButton(
+                                        icon: Icon(Icons.edit,
+                                            color: Colors.blue),
+                                        onPressed: () {
+                                          print("Hello edit");
+                                          print(doc.id + "  " + slot.id + "  ");
+                                          _editSlot(
+                                            context,
+                                            doc.id,
+                                            slot.id,
+                                            slotData,
+                                          );
+                                        },
+                                      ),
+                                    );
+                                  }).toList(),
+                                  ElevatedButton(
+                                    onPressed: () => _addSlot(context, doc.id),
+                                    child: Text("Add Slot"),
+                                  ),
+                                ]);
+                          },
+                        )
+                      ],
                     ),
-                    IconButton(
-                      icon: Icon(Icons.delete, color: Colors.red),
-                      onPressed: () => _deleteLab(doc.id),
-                    ),
-                  ],
-                ),
+                  ),
+                  OverflowBar(
+                    children: [
+                      IconButton(
+                        icon: Icon(Icons.edit, color: Colors.blue),
+                        onPressed: () => _editLab(context, doc.id, lab),
+                      ),
+                      IconButton(
+                        icon: Icon(Icons.delete, color: Colors.red),
+                        onPressed: () => _deleteLab(doc.id),
+                      ),
+                    ],
+                  ),
+                ],
               );
             }).toList(),
           );

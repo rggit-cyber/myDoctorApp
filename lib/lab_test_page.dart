@@ -1,26 +1,38 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:doctor_app/lab_info_page.dart';
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
-class LabTestPage extends StatefulWidget {
-  @override
-  _LabTestPageState createState() => _LabTestPageState();
-}
-
-class _LabTestPageState extends State<LabTestPage> {
+class LabTestPage extends StatelessWidget {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  List<Map<String, dynamic>> labTests = [];
 
-  @override
-  void initState() {
-    super.initState();
-    _fetchLabTests();
-  }
-
-  Future<void> _fetchLabTests() async {
-    final labTestsSnapshot = await _firestore.collection('lab_tests').get();
-    setState(() {
-      labTests = labTestsSnapshot.docs.map((doc) => doc.data()).toList();
-    });
+  void _showFilterDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Text("Filter Lab Tests"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              // Add filter options here
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text("Cancel"),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                // Apply filters
+                Navigator.pop(context);
+              },
+              child: Text("Apply"),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
@@ -28,18 +40,37 @@ class _LabTestPageState extends State<LabTestPage> {
     return Scaffold(
       appBar: AppBar(
         title: Text("Lab Tests"),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.filter_list),
+            onPressed: () => _showFilterDialog(context),
+          ),
+        ],
       ),
-      body: ListView.builder(
-        itemCount: labTests.length,
-        itemBuilder: (context, index) {
-          final labTest = labTests[index];
-          return ListTile(
-            leading: Icon(Icons.science),
-            title: Text(labTest['name']),
-            subtitle: Text("Category: ${labTest['category']}"),
-            onTap: () {
-              // Navigate to Lab Test Details or Booking Page
-            },
+      body: StreamBuilder<QuerySnapshot>(
+        stream: _firestore.collection('lab_tests').snapshots(),
+        builder: (context, snapshot) {
+          if (!snapshot.hasData) {
+            return Center(child: CircularProgressIndicator());
+          }
+
+          return ListView(
+            children: snapshot.data!.docs.map((doc) {
+              final labTest = doc.data() as Map<String, dynamic>;
+              return ListTile(
+                title: Text(labTest['name']),
+                subtitle: Text("Category: ${labTest['category']}"),
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) =>
+                          LabListPage(testName: labTest['name']),
+                    ),
+                  );
+                },
+              );
+            }).toList(),
           );
         },
       ),
