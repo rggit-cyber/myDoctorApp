@@ -5,6 +5,7 @@ import 'package:doctor_app/bookings_menu_page.dart';
 import 'package:doctor_app/doctor_appointment_page.dart';
 import 'package:doctor_app/hospital_admission_page.dart';
 import 'package:doctor_app/lab_test_page.dart';
+import 'package:doctor_app/locationservices.dart';
 import 'package:doctor_app/profile.dart';
 import 'package:doctor_app/radiology_investigation_page.dart';
 
@@ -23,6 +24,7 @@ class Homepage extends StatefulWidget {
 
 class _HomepageState extends State<Homepage> {
   int _currentIndex = 0;
+  String _location = "Fetching location...";
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   var db = FirebaseFirestore.instance;
 
@@ -36,6 +38,15 @@ class _HomepageState extends State<Homepage> {
     _fetchUserDetails();
     _fetchServices();
     _fetchPopularItems();
+    _loadLocation();
+  }
+
+  // Fetch user's location
+  void _loadLocation() async {
+    String location = await LocationService.getUserLocation();
+    setState(() {
+      _location = location;
+    });
   }
 
   Future<void> _fetchUserDetails() async {
@@ -112,6 +123,19 @@ class _HomepageState extends State<Homepage> {
                   Icon(Icons.location_on, color: Colors.red),
                   SizedBox(width: 8),
                   Text("Your Location", style: TextStyle(fontSize: 16)),
+                  Expanded(
+                    child: Text(
+                      _location,
+                      style:
+                          TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                      overflow:
+                          TextOverflow.ellipsis, // Prevents overflow issues
+                    ),
+                  ),
+                  IconButton(
+                    icon: Icon(Icons.refresh),
+                    onPressed: _loadLocation, // Refresh location on click
+                  ),
                   Spacer(),
                   TextButton(
                     onPressed: () {
