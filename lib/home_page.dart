@@ -5,6 +5,7 @@ import 'package:doctor_app/bookings_menu_page.dart';
 import 'package:doctor_app/doctor_appointment_page.dart';
 import 'package:doctor_app/hospital_admission_page.dart';
 import 'package:doctor_app/lab_test_page.dart';
+import 'package:doctor_app/profile.dart';
 import 'package:doctor_app/radiology_investigation_page.dart';
 
 import 'package:doctor_app/service_page.dart';
@@ -76,7 +77,14 @@ class _HomepageState extends State<Homepage> {
           IconButton(
             icon: Icon(Icons.account_circle),
             onPressed: () async {
-              print(_firestore.collection('users').get());
+              Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) => Profile(
+                            username: 'User',
+                            userId: widget.userId,
+                          )));
+              // print(_firestore.collection('users').get());
               // try {
               //   final snapshot =
               //       await FirebaseFirestore.instance.collection('users').get();
