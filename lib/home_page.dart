@@ -3,6 +3,8 @@ import 'package:doctor_app/admin_panel.dart';
 import 'package:doctor_app/ambulance_service_page.dart';
 import 'package:doctor_app/bookings_menu_page.dart';
 import 'package:doctor_app/doctor_appointment_page.dart';
+import 'package:doctor_app/doctorcard.dart';
+import 'package:doctor_app/emergency.dart';
 import 'package:doctor_app/hospital_admission_page.dart';
 import 'package:doctor_app/lab_test_page.dart';
 import 'package:doctor_app/locationservices.dart';
@@ -35,11 +37,58 @@ class _HomepageState extends State<Homepage> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _showEmergencyAlert();
+    });
     _fetchUserDetails();
     _fetchServices();
     _fetchPopularItems();
     _loadLocation();
   }
+
+  //Emergency Alert
+  void _showEmergencyAlert() {
+    showDialog(
+      context: context,
+      barrierDismissible: false, // Prevent user from dismissing the dialog
+      builder: (context) {
+        return AlertDialog(
+          title: const Text(
+            "Emergency Alert",
+            style: TextStyle(fontWeight: FontWeight.bold),
+          ),
+          content: const Text("Do you need any emergency service?"),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog and allow normal use
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.green, // Green button for "No"
+              ),
+              child: const Text("No", style: TextStyle(color: Colors.white)),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context); // Close dialog
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                      builder: (context) =>
+                          EmergencyPage()), // Navigate to emergency page
+                );
+              },
+              style: TextButton.styleFrom(
+                backgroundColor: Colors.red, // Red button for "Yes"
+              ),
+              child: const Text("Yes", style: TextStyle(color: Colors.white)),
+            ),
+          ],
+        );
+      },
+    );
+  }
+  //Emergency Alert
 
   // Fetch user's location
   void _loadLocation() async {
@@ -95,6 +144,7 @@ class _HomepageState extends State<Homepage> {
                             username: 'User',
                             userId: widget.userId,
                           )));
+
               // print(_firestore.collection('users').get());
               // try {
               //   final snapshot =
@@ -164,7 +214,7 @@ class _HomepageState extends State<Homepage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               GridView.count(
-                crossAxisCount: 2,
+                crossAxisCount: 5,
                 shrinkWrap: true,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
@@ -188,12 +238,26 @@ class _HomepageState extends State<Homepage> {
                 //       Icons.car_crash_outlined, Colors.red),
                 // ],
               ),
-              SizedBox(height: 20),
+              SizedBox(
+                height: 20,
+              ),
+              Text("Popular Doctors",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              SizedBox(height: 10),
 
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(children: [
+                  DoctorCard(),
+                ]),
+              ),
+              SizedBox(
+                height: 20,
+              ),
               // Popular Section
               Text("Popular Near You",
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
+              // SizedBox(height: 10),
               ListView(
                 shrinkWrap: true,
                 physics: NeverScrollableScrollPhysics(),

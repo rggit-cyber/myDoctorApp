@@ -1,3 +1,5 @@
+// import 'dart:ffi';
+
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -8,6 +10,33 @@ class ManageDoctorsPage extends StatefulWidget {
 
 class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final TextEditingController _slotController = TextEditingController();
+  final String doctorId = "doctorId"; // Replace with dynamic booking ID
+  List<String> slots = [];
+  // Function to Fetch Slots
+  // Future<List<String>> getSlots(String doctorId) async {
+  //   DocumentSnapshot doc =
+  //       await _firestore.collection('doctorId').doc(doctorId).get();
+
+  //   if (doc.exists) {
+  //     Map<String, dynamic>? data = doc.data() as Map<String, dynamic>?;
+  //     if (data != null && data.containsKey('availability')) {
+  //       List<dynamic> slots = data['availability']['slots'] ?? [];
+  //       return List<String>.from(slots);
+  //     }
+  //   }
+  //   return [];
+  // }
+
+  // void _addSlot() async {
+  //   String newSlot = _slotController.text.trim();
+  //   if (newSlot.isNotEmpty) {
+  //     await (doctorId, newSlot);
+  //     _slotController.clear();
+  //     ScaffoldMessenger.of(context)
+  //         .showSnackBar(SnackBar(content: Text("Slot Added!")));
+  //   }
+  // }
 
   void _addDoctor(BuildContext context) {
     showDialog(
@@ -69,6 +98,7 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
       context: context,
       builder: (context) {
         String name = currentData['name'] ?? '';
+        // Array newslot = currentData['slots'] ?? '';
         String specialization = currentData['specialization'] ?? '';
         int experienceYears = currentData['experience_years'] ?? 0;
 
@@ -87,6 +117,11 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
                 controller: TextEditingController(text: specialization),
                 onChanged: (value) => specialization = value,
               ),
+              //   TextField(
+              //   controller: _slotController,
+              //   decoration: InputDecoration(labelText: "Enter Slot (e.g., 10:00 AM)"),
+              //   onChanged: (value) => newslot = value as Array<NativeType>,
+              // ),
               TextField(
                 decoration: InputDecoration(labelText: "Experience (Years)"),
                 controller:
