@@ -17,23 +17,9 @@ class DoctorDetailsPage extends StatelessWidget {
           return Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
-        // final snapshotData = snapshot.data;
-        // print("Snapshot exists: ${snapshot.data!.exists}");
-        // print("Snapshot raw data: ${snapshot.data!.data()}");
-
-        // final List<Map<String, dynamic>> mockDoctors = [
-        //   {
-        //     "id": "doc1",
-        //     "name": "Dr. John Doe",
-        //     "specialization": "Cardiologist",
-        //     "experience_years": 15,
-        //     "availability": {
-        //       "slots": ["2024-12-30 10:00 AM", "2024-12-30 11:00 AM"]
-        //     }
-        //   }
-        // ];
         final doctor = snapshot.data!.data() as Map<String, dynamic>;
         final availableSlots = doctor['availability']['slots'] ?? [];
+        final bool isAvailable = doctor['availability']['status'] ?? false;
 
         return Scaffold(
           appBar: AppBar(
@@ -53,31 +39,44 @@ class DoctorDetailsPage extends StatelessWidget {
                 SizedBox(height: 10),
                 Text("Experience: ${doctor['experience_years']} years"),
                 SizedBox(height: 20),
-                Text("Available Slots",
-                    style:
-                        TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-                SizedBox(height: 10),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: availableSlots.length,
-                    itemBuilder: (context, index) {
-                      return ListTile(
-                        title: Text("Slot: ${availableSlots[index]}"),
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => BookingPage(
-                                doctorId: doctorId,
-                                slot: availableSlots[index],
+                if (!isAvailable)
+                  Center(
+                    child: Text(
+                      "Doctor unavailable",
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.red,
+                      ),
+                    ),
+                  )
+                else ...[
+                  Text("Available Slots",
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  SizedBox(height: 10),
+                  Expanded(
+                    child: ListView.builder(
+                      itemCount: availableSlots.length,
+                      itemBuilder: (context, index) {
+                        return ListTile(
+                          title: Text("Slot: ${availableSlots[index]}"),
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => BookingPage(
+                                  doctorId: doctorId,
+                                  slot: availableSlots[index],
+                                ),
                               ),
-                            ),
-                          );
-                        },
-                      );
-                    },
+                            );
+                          },
+                        );
+                      },
+                    ),
                   ),
-                ),
+                ],
               ],
             ),
           ),
