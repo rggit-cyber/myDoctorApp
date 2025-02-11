@@ -270,8 +270,6 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
 
   // Function to Edit a Slot
   void _editSlot(BuildContext context, String doctorId, String oldSlot) {
-    print(oldSlot);
-    // Extract Date and Time from the slot string
     List<String> slotParts = oldSlot.split(" ");
     DateTime initialDate = DateFormat('yyyy-MM-dd').parse(slotParts[0]);
     TimeOfDay initialTime = TimeOfDay(
@@ -279,63 +277,83 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
       minute: int.parse(slotParts[1].split(":")[1]),
     );
 
-    setState(() {
-      selectedDate = initialDate;
-      selectedTime = initialTime;
-    });
-
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text("Edit Slot"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              ListTile(
-                title: Text(DateFormat('yyyy-MM-dd').format(selectedDate!)),
-                trailing: Icon(Icons.calendar_today),
-                onTap: () => _selectDate(context),
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text("Edit Slot"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: Text(DateFormat('yyyy-MM-dd').format(initialDate)),
+                    trailing: Icon(Icons.calendar_today),
+                    onTap: () async {
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: initialDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2101),
+                      );
+                      if (pickedDate != null) {
+                        setDialogState(() {
+                          initialDate = pickedDate;
+                        });
+                      }
+                    },
+                  ),
+                  ListTile(
+                    title: Text(initialTime.format(context)),
+                    trailing: Icon(Icons.access_time),
+                    onTap: () async {
+                      TimeOfDay? pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: initialTime,
+                      );
+                      if (pickedTime != null) {
+                        setDialogState(() {
+                          initialTime = pickedTime;
+                        });
+                      }
+                    },
+                  ),
+                ],
               ),
-              ListTile(
-                title: Text(selectedTime!.format(context)),
-                trailing: Icon(Icons.access_time),
-                onTap: () => _selectTime(context),
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: Text("Cancel"),
-            ),
-            ElevatedButton(
-              onPressed: () async {
-                if (selectedDate != null && selectedTime != null) {
-                  String newSlot =
-                      "${DateFormat('yyyy-MM-dd').format(selectedDate!)} ${selectedTime!.format(context)}";
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    String newSlot =
+                        "${DateFormat('yyyy-MM-dd').format(initialDate)} ${initialTime.format(context)}";
 
-                  DocumentReference doctorRef =
-                      _firestore.collection('doctors').doc(doctorId);
+                    DocumentReference doctorRef =
+                        _firestore.collection('doctors').doc(doctorId);
 
-                  // Remove old slot and add the updated one
-                  await doctorRef.update({
-                    'availability.slots': FieldValue.arrayRemove([oldSlot]),
-                  });
-                  await doctorRef.update({
-                    'availability.slots': FieldValue.arrayUnion([newSlot]),
-                  });
+                    await doctorRef.update({
+                      'availability.slots': FieldValue.arrayRemove([oldSlot]),
+                    });
+                    await doctorRef.update({
+                      'availability.slots': FieldValue.arrayUnion([newSlot]),
+                    });
 
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Slot updated successfully!")),
-                  );
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Slot updated successfully!")),
+                    );
 
-                  Navigator.pop(context);
-                }
-              },
-              child: Text("Save"),
-            ),
-          ],
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    // Refresh UI after closing the dialog
+                  },
+                  child: Text("Save"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
