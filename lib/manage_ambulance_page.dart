@@ -136,6 +136,7 @@ class _ManageAmbulancePageState extends State<ManageAmbulancePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text("Manage Ambulances"),
         actions: [
           IconButton(

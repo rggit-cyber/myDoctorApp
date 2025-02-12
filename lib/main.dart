@@ -17,7 +17,10 @@ class MyApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(title: 'Hospital Management App', home: LoginType()
+    return MaterialApp(
+        debugShowCheckedModeBanner: false,
+        title: 'Hospital Management App',
+        home: LoginType()
         // HomePage(),
         );
   }

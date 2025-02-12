@@ -381,6 +381,7 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text("Manage Doctors"),
         actions: [
           IconButton(
