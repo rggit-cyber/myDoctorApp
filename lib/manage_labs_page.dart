@@ -300,6 +300,7 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text("Manage Labs"),
         actions: [
           IconButton(

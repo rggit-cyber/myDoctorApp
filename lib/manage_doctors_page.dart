@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class ManageDoctorsPage extends StatefulWidget {
   @override
@@ -8,11 +9,13 @@ class ManageDoctorsPage extends StatefulWidget {
 
 class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  final TextEditingController dateTimeController = TextEditingController();
+  // final TextEditingController dateTimeController = TextEditingController();
   final TextEditingController nameController = TextEditingController();
   final TextEditingController specializationController =
       TextEditingController();
   final TextEditingController experienceController = TextEditingController();
+  DateTime? selectedDate;
+  TimeOfDay? selectedTime;
 
   final String doctorId = "doctorId"; // Replace with dynamic doctor ID
   //Add Doctors
@@ -38,10 +41,19 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
                 decoration: InputDecoration(labelText: "Experience (Years)"),
                 keyboardType: TextInputType.number,
               ),
-              TextField(
-                controller: dateTimeController,
-                decoration:
-                    InputDecoration(labelText: "Enter Slots (comma-separated)"),
+              ListTile(
+                title: Text(selectedDate == null
+                    ? "Select Date"
+                    : DateFormat('yyyy-MM-dd').format(selectedDate!)),
+                trailing: Icon(Icons.calendar_today),
+                onTap: () => _selectDate(context),
+              ),
+              ListTile(
+                title: Text(selectedTime == null
+                    ? "Select Time"
+                    : selectedTime!.format(context)),
+                trailing: Icon(Icons.access_time),
+                onTap: () => _selectTime(context),
               ),
             ],
           ),
@@ -59,19 +71,11 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
                     'specialization': specializationController.text,
                     'experience_years':
                         int.tryParse(experienceController.text) ?? 0,
-                    'availability': {
-                      'slots': dateTimeController.text.isNotEmpty
-                          ? dateTimeController.text
-                              .split(',')
-                              .map((e) => e.trim())
-                              .toList()
-                          : []
-                    },
+                    'availability': {'slots': []},
                   });
                   nameController.clear();
                   specializationController.clear();
                   experienceController.clear();
-                  dateTimeController.clear();
                   Navigator.pop(context);
                 }
               },
@@ -85,16 +89,56 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
   //Add Doctors
 
   //Add Slot
+  void _selectDate(BuildContext context) async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now(),
+      firstDate: DateTime.now(),
+      lastDate: DateTime(2101),
+    );
+    if (picked != null && picked != selectedDate) {
+      setState(() {
+        selectedDate = picked;
+      });
+    }
+  }
+
+  void _selectTime(BuildContext context) async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+    );
+    if (picked != null && picked != selectedTime) {
+      setState(() {
+        selectedTime = picked;
+      });
+    }
+  }
+
   void _addSlots(BuildContext context, String doctorId) {
     showDialog(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: Text("Add Slots"),
-          content: TextField(
-            controller: dateTimeController,
-            decoration:
-                InputDecoration(labelText: "Enter Slots (comma-separated)"),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              ListTile(
+                title: Text(selectedDate == null
+                    ? "Select Date"
+                    : DateFormat('yyyy-MM-dd').format(selectedDate!)),
+                trailing: Icon(Icons.calendar_today),
+                onTap: () => _selectDate(context),
+              ),
+              ListTile(
+                title: Text(selectedTime == null
+                    ? "Select Time"
+                    : selectedTime!.format(context)),
+                trailing: Icon(Icons.access_time),
+                onTap: () => _selectTime(context),
+              ),
+            ],
           ),
           actions: [
             TextButton(
@@ -103,31 +147,24 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
             ),
             ElevatedButton(
               onPressed: () async {
-                if (dateTimeController.text.isNotEmpty) {
-                  List<String> newSlots = dateTimeController.text
-                      .split(',')
-                      .map((e) => e.trim())
-                      .toList();
+                if (selectedDate != null && selectedTime != null) {
+                  String formattedSlot =
+                      "${DateFormat('yyyy-MM-dd').format(selectedDate!)} ${selectedTime!.format(context)}";
 
-                  try {
-                    await _firestore
-                        .collection('doctors')
-                        .doc(doctorId)
-                        .update({
-                      'availability.slots': FieldValue.arrayUnion(newSlots),
-                    });
+                  await _firestore.collection('doctors').doc(doctorId).update({
+                    'availability.slots':
+                        FieldValue.arrayUnion([formattedSlot]),
+                  });
 
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Slots added successfully!")),
-                    );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text("Slot added successfully!")),
+                  );
 
-                    dateTimeController.clear();
-                    Navigator.pop(context);
-                  } catch (e) {
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text("Error: $e")),
-                    );
-                  }
+                  setState(() {
+                    selectedDate = null;
+                    selectedTime = null;
+                  });
+                  Navigator.pop(context);
                 }
               },
               child: Text("Add"),
@@ -208,7 +245,10 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
 
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Slot Added Successfully!")));
-      dateTimeController.clear();
+      setState(() {
+        selectedDate = null;
+        selectedTime = null;
+      });
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Error: $e")));
@@ -229,31 +269,108 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
   }
 
   // Function to Edit a Slot
-  Future<void> editSlot(String doctorId, String oldSlot, String newSlot) async {
-    if (newSlot.isEmpty) return;
-    try {
-      DocumentReference doctorRef =
-          _firestore.collection('doctors').doc(doctorId);
-      await doctorRef.update({
-        'availability.slots': FieldValue.arrayRemove([oldSlot]),
-      });
-      await doctorRef.update({
-        'availability.slots': FieldValue.arrayUnion([newSlot]),
-      });
-    } catch (e) {
-      ScaffoldMessenger.of(context)
-          .showSnackBar(SnackBar(content: Text("Error: $e")));
-    }
+  void _editSlot(BuildContext context, String doctorId, String oldSlot) {
+    List<String> slotParts = oldSlot.split(" ");
+    DateTime initialDate = DateFormat('yyyy-MM-dd').parse(slotParts[0]);
+    TimeOfDay initialTime = TimeOfDay(
+      hour: int.parse(slotParts[1].split(":")[0]),
+      minute: int.parse(slotParts[1].split(":")[1]),
+    );
+
+    showDialog(
+      context: context,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setDialogState) {
+            return AlertDialog(
+              title: Text("Edit Slot"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: Text(DateFormat('yyyy-MM-dd').format(initialDate)),
+                    trailing: Icon(Icons.calendar_today),
+                    onTap: () async {
+                      DateTime? pickedDate = await showDatePicker(
+                        context: context,
+                        initialDate: initialDate,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(2101),
+                      );
+                      if (pickedDate != null) {
+                        setDialogState(() {
+                          initialDate = pickedDate;
+                        });
+                      }
+                    },
+                  ),
+                  ListTile(
+                    title: Text(initialTime.format(context)),
+                    trailing: Icon(Icons.access_time),
+                    onTap: () async {
+                      TimeOfDay? pickedTime = await showTimePicker(
+                        context: context,
+                        initialTime: initialTime,
+                      );
+                      if (pickedTime != null) {
+                        setDialogState(() {
+                          initialTime = pickedTime;
+                        });
+                      }
+                    },
+                  ),
+                ],
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () async {
+                    String newSlot =
+                        "${DateFormat('yyyy-MM-dd').format(initialDate)} ${initialTime.format(context)}";
+
+                    DocumentReference doctorRef =
+                        _firestore.collection('doctors').doc(doctorId);
+
+                    await doctorRef.update({
+                      'availability.slots': FieldValue.arrayRemove([oldSlot]),
+                    });
+                    await doctorRef.update({
+                      'availability.slots': FieldValue.arrayUnion([newSlot]),
+                    });
+
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      SnackBar(content: Text("Slot updated successfully!")),
+                    );
+
+                    Navigator.pop(context);
+                    Navigator.pop(context);
+                    // Refresh UI after closing the dialog
+                  },
+                  child: Text("Save"),
+                ),
+              ],
+            );
+          },
+        );
+      },
+    );
   }
 
-  // Function to Delete a Slot
-  Future<void> deleteSlot(String doctorId, String slot) async {
+  // Function to delete a Slot
+  Future<void> _deleteSlot(String doctorId, String slot) async {
     try {
       DocumentReference doctorRef =
           _firestore.collection('doctors').doc(doctorId);
       await doctorRef.update({
         'availability.slots': FieldValue.arrayRemove([slot]),
       });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text("Slot deleted successfully!")),
+      );
     } catch (e) {
       ScaffoldMessenger.of(context)
           .showSnackBar(SnackBar(content: Text("Error: $e")));
@@ -264,6 +381,7 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text("Manage Doctors"),
         actions: [
           IconButton(
@@ -314,55 +432,45 @@ class _ManageDoctorsPageState extends State<ManageDoctorsPage> {
                         ],
                       ),
                       DropdownButton<String>(
-                        hint: Text("Select Slot to Edit/Delete"),
-                        items: slots.map<DropdownMenuItem<String>>((slot) {
-                          return DropdownMenuItem<String>(
-                            value: slot,
-                            child: Text(slot),
-                          );
-                        }).toList(),
-                        onChanged: (String? newSlot) {
-                          if (newSlot != null) {
-                            showDialog(
-                              context: context,
-                              builder: (context) {
-                                TextEditingController slotController =
-                                    TextEditingController(text: newSlot);
-                                return AlertDialog(
-                                  title: Text("Edit or Delete Slot"),
-                                  content: TextField(
-                                    controller: slotController,
-                                    decoration:
-                                        InputDecoration(labelText: "Edit Slot"),
-                                  ),
-                                  actions: [
-                                    TextButton(
-                                      onPressed: () => Navigator.pop(context),
-                                      child: Text("Cancel"),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        editSlot(doc.id, newSlot,
-                                            slotController.text);
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text("Save"),
-                                    ),
-                                    ElevatedButton(
-                                      onPressed: () {
-                                        deleteSlot(doc.id, newSlot);
-                                        Navigator.pop(context);
-                                      },
-                                      child: Text("Delete",
-                                          style: TextStyle(color: Colors.red)),
-                                    ),
-                                  ],
-                                );
-                              },
+                          hint: Text("Select Slot to Edit/Delete"),
+                          items: slots.map<DropdownMenuItem<String>>((slot) {
+                            return DropdownMenuItem<String>(
+                              value: slot,
+                              child: Text(slot),
                             );
-                          }
-                        },
-                      ),
+                          }).toList(),
+                          onChanged: (String? newSlot) {
+                            if (newSlot != null) {
+                              showDialog(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    title: Text("Edit or Delete Slot"),
+                                    actions: [
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          _editSlot(context, doc.id, newSlot);
+                                          // Fix: Use `doc.id`
+                                          // Navigator.pop(context);
+                                          // _selectDate(context);
+                                        },
+                                        child: Text("Edit"),
+                                      ),
+                                      ElevatedButton(
+                                        onPressed: () {
+                                          _deleteSlot(doc.id, newSlot);
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text("Delete",
+                                            style:
+                                                TextStyle(color: Colors.red)),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+                            }
+                          }),
                       SwitchListTile(
                         title: Text("Doctor Available"),
                         value: isAvailable,

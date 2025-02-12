@@ -92,6 +92,7 @@ class _ManageBookingsPageState extends State<ManageBookingsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text("Manage Bookings"),
         actions: [
           DropdownButton<String>(
