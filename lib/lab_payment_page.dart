@@ -27,7 +27,7 @@ class LabPaymentPage extends StatelessWidget {
         'test_name': testName,
         'slot': slot,
         'price': price,
-        'user_id': 'current_user_id', // Replace with actual user ID
+        'user_id': '1', // Replace with actual user ID
         'status': 'pending',
         'booking_date': DateTime.now(),
       });

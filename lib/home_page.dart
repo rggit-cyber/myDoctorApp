@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:doctor_app/admin_panel.dart';
 import 'package:doctor_app/ambulance_service_page.dart';
+import 'package:doctor_app/all_bookings_page.dart';
 import 'package:doctor_app/bookings_menu_page.dart';
 import 'package:doctor_app/doctor_appointment_page.dart';
 import 'package:doctor_app/doctorcard.dart';
@@ -308,7 +309,7 @@ class _HomepageState extends State<Homepage> {
           });
 
           // Handle navigation based on index
-          if (index == 1) {
+          if (index == 3) {
             User? user = FirebaseAuth.instance.currentUser;
             // if (user != null) {
             String userId = '1';
@@ -322,6 +323,14 @@ class _HomepageState extends State<Homepage> {
                       )),
             );
             // }
+          } else if (index == 1) {
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                  builder: (context) => UserBookingsPage(
+                        userId: '1',
+                      )),
+            );
           } else if (index == 4) {
             Navigator.push(
               context,
