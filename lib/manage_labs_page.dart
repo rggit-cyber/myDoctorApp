@@ -185,49 +185,79 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
     _firestore.collection('labs').doc(labId).delete();
   }
 
-  void _addSlot(BuildContext context, String labId) {
+  void _addSlot(BuildContext context, String labId) async {
+    TimeOfDay? startTime;
+    TimeOfDay? endTime;
+
+    Future<TimeOfDay?> pickTime(BuildContext context) async {
+      return await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+    }
+
     showDialog(
       context: context,
       builder: (context) {
-        String time = '';
-        bool availability = true;
-
-        return AlertDialog(
-          title: Text("Add Slot"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                decoration: InputDecoration(labelText: "Time (e.g., 10:00 AM)"),
-                onChanged: (value) => time = value,
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Add Slot"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ListTile(
+                    title: Text(startTime == null
+                        ? "Pick Start Time"
+                        : "Start Time: ${startTime!.format(context)}"),
+                    trailing: Icon(Icons.access_time),
+                    onTap: () async {
+                      TimeOfDay? picked = await pickTime(context);
+                      if (picked != null) {
+                        setState(() => startTime = picked);
+                      }
+                    },
+                  ),
+                  ListTile(
+                    title: Text(endTime == null
+                        ? "Pick End Time"
+                        : "End Time: ${endTime!.format(context)}"),
+                    trailing: Icon(Icons.access_time),
+                    onTap: () async {
+                      TimeOfDay? picked = await pickTime(context);
+                      if (picked != null) {
+                        setState(() => endTime = picked);
+                      }
+                    },
+                  ),
+                ],
               ),
-              SwitchListTile(
-                title: Text("Available"),
-                value: availability,
-                onChanged: (value) => availability = value,
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context), child: Text("Cancel")),
-            ElevatedButton(
-              onPressed: () {
-                if (time.isNotEmpty) {
-                  _firestore
-                      .collection('labs')
-                      .doc(labId)
-                      .collection('slots')
-                      .add({
-                    'time': time,
-                    'availability': availability,
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              child: Text("Add"),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (startTime != null && endTime != null) {
+                      String slotTime =
+                          "${startTime!.format(context)} - ${endTime!.format(context)}";
+                      _firestore
+                          .collection('labs')
+                          .doc(labId)
+                          .collection('slots')
+                          .add({
+                        'time': slotTime,
+                        'availability': true,
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Text("Add"),
+                ),
+              ],
+            );
+          },
         );
       },
     );
@@ -245,52 +275,112 @@ class _ManageLabsPageState extends State<ManageLabsPage> {
 
   void _editSlot(BuildContext context, String labId, String slotId,
       Map<String, dynamic> slotData) {
-    TextEditingController timeController =
-        TextEditingController(text: slotData['time']);
+    TimeOfDay? startTime = slotData['start_time'] != null
+        ? TimeOfDay(
+            hour: int.parse(slotData['start_time'].split(':')[0]),
+            minute:
+                int.parse(slotData['start_time'].split(':')[1].split(' ')[0]))
+        : null;
+    TimeOfDay? endTime = slotData['end_time'] != null
+        ? TimeOfDay(
+            hour: int.parse(slotData['end_time'].split(':')[0]),
+            minute: int.parse(slotData['end_time'].split(':')[1].split(' ')[0]))
+        : null;
     bool availability = slotData['availability'];
+
+    Future<TimeOfDay?> _pickTime() async {
+      return await showTimePicker(
+        context: context,
+        initialTime: TimeOfDay.now(),
+      );
+    }
 
     showDialog(
       context: context,
       builder: (context) {
-        return AlertDialog(
-          title: Text("Edit Slot"),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: timeController,
-                decoration: InputDecoration(labelText: "Time (e.g., 10:00 AM)"),
+        return StatefulBuilder(
+          builder: (context, setState) {
+            return AlertDialog(
+              title: Text("Edit Slot"),
+              content: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  ElevatedButton(
+                    onPressed: () async {
+                      TimeOfDay? picked = await _pickTime();
+                      if (picked != null) {
+                        setState(() {
+                          startTime = picked;
+                        });
+                      }
+                    },
+                    child: Text(startTime == null
+                        ? "Pick Start Time"
+                        : "Start Time: ${startTime!.format(context)}"),
+                  ),
+                  SizedBox(height: 10),
+                  ElevatedButton(
+                    onPressed: () async {
+                      TimeOfDay? picked = await _pickTime();
+                      if (picked != null) {
+                        setState(() {
+                          endTime = picked;
+                        });
+                      }
+                    },
+                    child: Text(endTime == null
+                        ? "Pick End Time"
+                        : "End Time: ${endTime!.format(context)}"),
+                  ),
+                  SwitchListTile(
+                    title: Text("Available"),
+                    value: availability,
+                    onChanged: (value) {
+                      setState(() {
+                        availability = value;
+                      });
+                    },
+                  ),
+                ],
               ),
-              SwitchListTile(
-                title: Text("Available"),
-                value: availability,
-                onChanged: (value) {
-                  availability = value;
-                },
-              ),
-            ],
-          ),
-          actions: [
-            TextButton(
-                onPressed: () => Navigator.pop(context), child: Text("Cancel")),
-            ElevatedButton(
-              onPressed: () {
-                if (timeController.text.isNotEmpty) {
-                  _firestore
-                      .collection('labs')
-                      .doc(labId)
-                      .collection('slots')
-                      .doc(slotId)
-                      .update({
-                    'time': timeController.text,
-                    'availability': availability,
-                  });
-                  Navigator.pop(context);
-                }
-              },
-              child: Text("Save"),
-            ),
-          ],
+              actions: [
+                TextButton(
+                  onPressed: () {
+                    _firestore
+                        .collection('labs')
+                        .doc(labId)
+                        .collection('slots')
+                        .doc(slotId)
+                        .delete();
+                    Navigator.pop(context);
+                  },
+                  child: Text("Delete", style: TextStyle(color: Colors.red)),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.pop(context),
+                  child: Text("Cancel"),
+                ),
+                ElevatedButton(
+                  onPressed: () {
+                    if (startTime != null && endTime != null) {
+                      _firestore
+                          .collection('labs')
+                          .doc(labId)
+                          .collection('slots')
+                          .doc(slotId)
+                          .update({
+                        'time':
+                            "${startTime!.format(context)} - ${endTime!.format(context)}",
+                        'availability': availability,
+                      });
+                      Navigator.pop(context);
+                    }
+                  },
+                  child: Text("Save"),
+                ),
+              ],
+            );
+          },
         );
       },
     );

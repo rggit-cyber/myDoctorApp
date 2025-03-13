@@ -64,8 +64,10 @@ class _LoginTypeState extends State<LoginType> {
             ),
             GestureDetector(
               onTap: () {
-                Navigator.push(context,
-                    MaterialPageRoute(builder: (context) => HomePage()));
+                Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => HomePageLoginPage()));
               },
               child: Material(
                 child: Center(

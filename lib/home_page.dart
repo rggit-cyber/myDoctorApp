@@ -4,15 +4,20 @@ import 'package:doctor_app/ambulance_service_page.dart';
 import 'package:doctor_app/all_bookings_page.dart';
 import 'package:doctor_app/bookings_menu_page.dart';
 import 'package:doctor_app/doctor_appointment_page.dart';
-import 'package:doctor_app/doctorcard.dart';
+// import 'package:doctor_app/doctorcard.dart';
 import 'package:doctor_app/emergency.dart';
 import 'package:doctor_app/hospital_admission_page.dart';
 import 'package:doctor_app/lab_test_page.dart';
 import 'package:doctor_app/locationservices.dart';
+import 'package:doctor_app/map_page.dart';
+import 'package:doctor_app/notification_page.dart';
 import 'package:doctor_app/profile.dart';
 import 'package:doctor_app/radiology_investigation_page.dart';
+import 'package:geolocator/geolocator.dart';
+import 'package:geocoding/geocoding.dart';
 
 import 'package:doctor_app/service_page.dart';
+import 'package:doctor_app/universal_search_page.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 
@@ -26,6 +31,8 @@ class Homepage extends StatefulWidget {
 }
 
 class _HomepageState extends State<Homepage> {
+  bool hasUnseenNotifications = false;
+
   int _currentIndex = 0;
   String _location = "Fetching location...";
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -45,7 +52,59 @@ class _HomepageState extends State<Homepage> {
     _fetchServices();
     _fetchPopularItems();
     _loadLocation();
+    _fetchUnseenNotifications();
+    _addNotification;
   }
+
+  //add notification
+  void _addNotification(String userId, String message) async {
+    await FirebaseFirestore.instance.collection('notifications').add({
+      'userId': userId, // The user who should see the notification
+      'message': message,
+      'timestamp': FieldValue.serverTimestamp(),
+      'seen': false // Mark as unseen initially
+    });
+  }
+
+  //add notification
+
+  //Fetch Notification
+  Future<void> _fetchUnseenNotifications() async {
+    final snapshot = await _firestore
+        .collection('notifications')
+        .where('userId', isEqualTo: widget.userId)
+        .where('seen', isEqualTo: false) // Fetch only unseen notifications
+        .get();
+
+    if (snapshot.docs.isNotEmpty) {
+      setState(() {
+        hasUnseenNotifications = true; // Show red dot
+      });
+    }
+  }
+  //Fetch Notification
+
+  //Mark Notification unseen
+  Future<void> _markNotificationsAsSeen() async {
+    final snapshot = await _firestore
+        .collection('notifications')
+        .where('userId', isEqualTo: widget.userId)
+        .where('seen', isEqualTo: false)
+        .get();
+
+    for (var doc in snapshot.docs) {
+      await _firestore
+          .collection('notifications')
+          .doc(doc.id)
+          .update({'seen': true});
+    }
+
+    setState(() {
+      hasUnseenNotifications = false; // Remove red dot
+    });
+  }
+
+  //Mark Notification unseen
 
   //Emergency Alert
   void _showEmergencyAlert() {
@@ -92,13 +151,66 @@ class _HomepageState extends State<Homepage> {
   //Emergency Alert
 
   // Fetch user's location
+
+  // void _loadLocation() async {
+  //   String location = await LocationService.getUserLocation();
+  //   setState(() {
+  //     _location = location;
+  //   });
+  // }
   void _loadLocation() async {
-    String location = await LocationService.getUserLocation();
-    setState(() {
-      _location = location;
-    });
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Check if location services are enabled
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      setState(() {
+        _location = "Location services are disabled";
+      });
+      return;
+    }
+
+    // Request permission
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        setState(() {
+          _location = "Location permissions are denied";
+        });
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        _location = "Location permissions are permanently denied";
+      });
+      return;
+    }
+
+    // Get current position
+    Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high);
+
+    // Get place name
+    List<Placemark> placemarks =
+        await placemarkFromCoordinates(position.latitude, position.longitude);
+
+    if (placemarks.isNotEmpty) {
+      Placemark place = placemarks[0];
+      setState(() {
+        _location = "${place.locality}, ${place.administrativeArea}";
+      });
+    } else {
+      setState(() {
+        _location = "Unknown location";
+      });
+    }
   }
 
+  // Fetch user's location
   Future<void> _fetchUserDetails() async {
     final userDoc =
         await _firestore.collection('users').doc(widget.userId).get();
@@ -129,11 +241,34 @@ class _HomepageState extends State<Homepage> {
       appBar: AppBar(
         title: Text("Hello, ${widget.username}"),
         actions: [
-          IconButton(
-            icon: Icon(Icons.notifications),
-            onPressed: () {
-              // Navigate to Notifications Page
-            },
+          Stack(
+            children: [
+              IconButton(
+                icon: Icon(Icons.notifications),
+                onPressed: () async {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) =>
+                            NotificationsPage(userId: widget.userId)),
+                  );
+                  _markNotificationsAsSeen();
+                },
+              ),
+              if (hasUnseenNotifications) // Show red dot only if there are unseen notifications
+                Positioned(
+                  right: 10,
+                  top: 10,
+                  child: Container(
+                    width: 10,
+                    height: 10,
+                    decoration: BoxDecoration(
+                      color: Colors.red,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                ),
+            ],
           ),
           IconButton(
             icon: Icon(Icons.account_circle),
@@ -173,7 +308,7 @@ class _HomepageState extends State<Homepage> {
                 children: [
                   Icon(Icons.location_on, color: Colors.red),
                   SizedBox(width: 8),
-                  Text("Your Location", style: TextStyle(fontSize: 16)),
+                  // Text("Your Location", style: TextStyle(fontSize: 16)),
                   Expanded(
                     child: Text(
                       _location,
@@ -189,8 +324,17 @@ class _HomepageState extends State<Homepage> {
                   ),
                   Spacer(),
                   TextButton(
-                    onPressed: () {
-                      // Trigger location permission and fetch location
+                    onPressed: () async {
+                      final result = await Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (context) => MapPage()),
+                      );
+
+                      if (result != null) {
+                        setState(() {
+                          _location = result;
+                        });
+                      }
                     },
                     child: Text("Change"),
                   ),
@@ -200,12 +344,18 @@ class _HomepageState extends State<Homepage> {
 
               // Search Bar
               TextField(
+                readOnly: true, // So user taps instead of typing directly
+                onTap: () {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                        builder: (context) => UniversalSearchPage()),
+                  );
+                },
                 decoration: InputDecoration(
-                  hintText: "Search for services, doctors, tests...",
+                  hintText: "Search doctors, labs...",
                   prefixIcon: Icon(Icons.search),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(8),
-                  ),
+                  border: OutlineInputBorder(),
                 ),
               ),
               SizedBox(height: 20),
@@ -215,7 +365,7 @@ class _HomepageState extends State<Homepage> {
                   style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               SizedBox(height: 10),
               GridView.count(
-                crossAxisCount: 5,
+                crossAxisCount: 2,
                 shrinkWrap: true,
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
@@ -242,37 +392,37 @@ class _HomepageState extends State<Homepage> {
               SizedBox(
                 height: 20,
               ),
-              Text("Popular Doctors",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              SizedBox(height: 10),
-
-              SingleChildScrollView(
-                scrollDirection: Axis.horizontal,
-                child: Row(children: [
-                  DoctorCard(),
-                ]),
-              ),
-              SizedBox(
-                height: 20,
-              ),
-              // Popular Section
-              Text("Popular Near You",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              // Text("Popular Doctors",
+              //     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
               // SizedBox(height: 10),
-              ListView(
-                shrinkWrap: true,
-                physics: NeverScrollableScrollPhysics(),
-                children: popularItems.map((item) {
-                  return _buildPopularItem(
-                      item['name'], item['distance'], Icons.location_city);
-                }).toList(),
-                // [
-                //   _buildPopularItem(
-                //       "City Hospital", "5 km away", Icons.local_hospital),
-                //   _buildPopularItem(
-                //       "LabCare Diagnostics", "3 km away", Icons.science),
-                // ],
-              ),
+
+              // SingleChildScrollView(
+              //   scrollDirection: Axis.horizontal,
+              //   child: Row(children: [
+              //     DoctorCard(),
+              //   ]),
+              // ),
+              // SizedBox(
+              //   height: 20,
+              // ),
+              // Popular Section
+              // Text("Popular Near You",
+              //     style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              // // SizedBox(height: 10),
+              // ListView(
+              //   shrinkWrap: true,
+              //   physics: NeverScrollableScrollPhysics(),
+              //   children: popularItems.map((item) {
+              //     return _buildPopularItem(
+              //         item['name'], item['distance'], Icons.location_city);
+              //   }).toList(),
+              //   // [
+              //   //   _buildPopularItem(
+              //   //       "City Hospital", "5 km away", Icons.local_hospital),
+              //   //   _buildPopularItem(
+              //   //       "LabCare Diagnostics", "3 km away", Icons.science),
+              //   // ],
+              // ),
             ],
           ),
         ),
