@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "101138540925",
+    "project_id": "doctorapp-5c57e",
+    "storage_bucket": "doctorapp-5c57e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:101138540925:android:3fb1ceae3dcc5924f2c414",
+        "android_client_info": {
+          "package_name": "com.robogalactic.doctor_app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBUkMZ3aW0WOoCGabQ0SUEvwESstzsXTOU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
